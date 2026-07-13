@@ -1,0 +1,16 @@
+# Ignore virtual environment
+.venv/
+
+# Ignore dataset folders
+Diffected with no greyscale/
+Non diffected with greyscale/
+
+# Ignore trained models
+models/
+
+# Ignore images
+*.jpg
+*.png
+
+# Python cache
+__pycache__/
