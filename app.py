@@ -18,9 +18,11 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# ATTRACTIVE AI PRELOADER ANIMATION
+# ATTRACTIVE AI PRELOADER ANIMATION (RUNS ONLY ONCE ON INITIAL LOAD)
 # -----------------------------------------------------------------------------
-components.html("""
+if "preloader_shown" not in st.session_state:
+    st.session_state.preloader_shown = True
+    components.html("""
 <style>
 #ai-page-preloader {
     position: fixed;
@@ -159,6 +161,9 @@ components.html("""
 (function() {
     const parentDoc = window.parent.document;
     if (parentDoc.getElementById('ai-page-preloader')) return;
+    try {
+        if (window.parent.sessionStorage.getItem('ai_preloader_completed')) return;
+    } catch(e) {}
 
     const preloader = parentDoc.createElement('div');
     preloader.id = 'ai-page-preloader';
@@ -185,6 +190,9 @@ components.html("""
     parentDoc.body.appendChild(preloader);
 
     window.parent.dismissAIPagePreloader = function() {
+        try {
+            window.parent.sessionStorage.setItem('ai_preloader_completed', 'true');
+        } catch(e) {}
         if (preloader && !preloader.classList.contains('fade-out')) {
             preloader.classList.add('fade-out');
             setTimeout(() => {
