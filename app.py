@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from torchvision import transforms, models
 import torch.nn.functional as F
 
@@ -79,33 +80,6 @@ st.markdown("""
         padding: 8px;
         text-align: center;
     }
-    /* Prominent Drag and Drop Zone */
-    [data-testid="stFileUploader"] {
-        width: 100%;
-        margin-bottom: 12px;
-    }
-    [data-testid="stFileUploader"] section {
-        padding: 36px 20px !important;
-        border: 2px dashed #38BDF8 !important;
-        border-radius: 16px !important;
-        background: rgba(56, 189, 248, 0.04) !important;
-        transition: all 0.25s ease-in-out !important;
-        text-align: center;
-    }
-    [data-testid="stFileUploader"] section:hover {
-        border-color: #06B6D4 !important;
-        background: rgba(56, 189, 248, 0.1) !important;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.2) !important;
-    }
-    [data-testid="stFileUploader"] section span {
-        color: #F8FAFC !important;
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-    }
-    [data-testid="stFileUploader"] section small {
-        color: #94A3B8 !important;
-        font-size: 0.85rem !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -180,23 +154,134 @@ def highlight_defects_with_regions(gray, heatmap):
 st.markdown("<div class='main-title'>🔍 Metal Surface Defect Detection</div>", unsafe_allow_html=True)
 st.markdown("<div class='sub-title'>Easily upload or select an image to check if a metal surface is normal or defective.</div>", unsafe_allow_html=True)
 
+# -----------------------------------------------------------------------------
+# GLOBAL DRAG & DROP ANYWHERE ON PAGE
+# -----------------------------------------------------------------------------
+components.html("""
+<script>
+(function() {
+    const parentDoc = window.parent.document;
+    if (parentDoc.getElementById('global-drag-installed')) return;
+
+    const marker = parentDoc.createElement('div');
+    marker.id = 'global-drag-installed';
+    marker.style.display = 'none';
+    parentDoc.body.appendChild(marker);
+
+    // Create subtle drag overlay
+    const overlay = parentDoc.createElement('div');
+    overlay.id = 'page-drag-overlay';
+    overlay.innerHTML = `
+        <div style="
+            background: rgba(15, 23, 42, 0.92);
+            border: 3px dashed #38BDF8;
+            border-radius: 20px;
+            padding: 36px 54px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+        ">
+            <div style="font-size: 3rem; margin-bottom: 8px;">📥</div>
+            <div style="color: #FFFFFF; font-size: 1.4rem; font-weight: 700; font-family: sans-serif;">
+                Drop Metal Surface Image Anywhere
+            </div>
+            <div style="color: #94A3B8; font-size: 0.9rem; margin-top: 4px; font-family: sans-serif;">
+                Release to analyze surface for defects
+            </div>
+        </div>
+    `;
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(10, 15, 29, 0.7);
+        z-index: 9999999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
+    `;
+    parentDoc.body.appendChild(overlay);
+
+    let dragCount = 0;
+
+    parentDoc.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragCount++;
+        overlay.style.display = 'flex';
+    });
+
+    parentDoc.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragCount--;
+        if (dragCount <= 0) {
+            dragCount = 0;
+            overlay.style.display = 'none';
+        }
+    });
+
+    parentDoc.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    parentDoc.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dragCount = 0;
+        overlay.style.display = 'none';
+
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            // Dispatch to dropzone container
+            const dropzone = parentDoc.querySelector('[data-testid="stFileUploaderDropzone"]');
+            if (dropzone) {
+                try {
+                    const dropEvt = new DragEvent('drop', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: e.dataTransfer
+                    });
+                    dropzone.dispatchEvent(dropEvt);
+                } catch(err) {
+                    console.warn(err);
+                }
+            }
+
+            // Also set files on input element directly
+            const fileInput = parentDoc.querySelector('section[data-testid="stFileUploader"] input[type="file"]') || 
+                              parentDoc.querySelector('input[type="file"]');
+            if (fileInput) {
+                try {
+                    fileInput.files = e.dataTransfer.files;
+                    fileInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch(err) {
+                    console.warn(err);
+                }
+            }
+        }
+    });
+})();
+</script>
+""", height=0, width=0)
+
 if model is None:
     st.error("Model file not found. Please ensure 'models/defect_classifier.pth' exists.")
 else:
     # -------------------------------------------------------------------------
-    # SIMPLE INPUT SECTION (DRAG & DROP ZONE)
+    # SIMPLE INPUT SECTION
     # -------------------------------------------------------------------------
-    uploaded_file = st.file_uploader(
-        "📁 Drag and drop your metal surface image here, or click to browse",
-        type=["jpg", "png", "jpeg", "bmp"],
-        help="Upload any high-resolution surface image file"
-    )
+    col_input1, col_input2 = st.columns([1.5, 1])
 
-    with st.expander("💡 Or test with preloaded sample images from the dataset"):
+    with col_input1:
+        uploaded_file = st.file_uploader("Upload a metal image:", type=["jpg", "png", "jpeg", "bmp"])
+
+    with col_input2:
         sample_choice = st.selectbox(
-            "Choose a sample to inspect:",
-            list(DEMO_SAMPLES.keys()),
-            index=0
+            "Or pick an example test image:",
+            list(DEMO_SAMPLES.keys())
         )
 
     # Resolve selected image
@@ -205,7 +290,7 @@ else:
     if uploaded_file is not None:
         file_bytes = np.frombuffer(uploaded_file.read(), np.uint8)
         img_gray = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
-    elif sample_choice != "None (Upload my own)" and DEMO_SAMPLES.get(sample_choice) and os.path.exists(DEMO_SAMPLES[sample_choice]):
+    elif DEMO_SAMPLES[sample_choice] is not None and os.path.exists(DEMO_SAMPLES[sample_choice]):
         img_gray = cv2.imread(DEMO_SAMPLES[sample_choice], cv2.IMREAD_GRAYSCALE)
 
     # -------------------------------------------------------------------------
