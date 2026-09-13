@@ -38,41 +38,43 @@ DEMO_SAMPLES = {
 st.markdown("""
 <style>
     .main-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 4px;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #FFFFFF !important;
+        margin-bottom: 6px;
+        letter-spacing: -0.01em;
     }
     .sub-title {
-        font-size: 1rem;
-        color: #64748B;
+        font-size: 1.05rem;
+        color: #E2E8F0 !important;
         margin-bottom: 24px;
+        font-weight: 400;
     }
     .result-card-defect {
-        background-color: #FEF2F2;
+        background: rgba(239, 68, 68, 0.18);
         border: 2px solid #EF4444;
         border-radius: 12px;
         padding: 16px 20px;
-        color: #991B1B;
+        color: #FEE2E2 !important;
         font-size: 1.25rem;
         font-weight: 700;
         text-align: center;
         margin: 16px 0;
     }
     .result-card-normal {
-        background-color: #F0FDF4;
+        background: rgba(34, 197, 94, 0.18);
         border: 2px solid #22C55E;
         border-radius: 12px;
         padding: 16px 20px;
-        color: #166534;
+        color: #DCFCE7 !important;
         font-size: 1.25rem;
         font-weight: 700;
         text-align: center;
         margin: 16px 0;
     }
     .image-box {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 10px;
         padding: 8px;
         text-align: center;
