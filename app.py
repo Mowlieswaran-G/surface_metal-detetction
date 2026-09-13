@@ -18,6 +18,192 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
+# ATTRACTIVE AI PRELOADER ANIMATION
+# -----------------------------------------------------------------------------
+components.html("""
+<style>
+#ai-page-preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #0F172A 0%, #060913 100%);
+    z-index: 999999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.7s, transform 0.7s;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+#ai-page-preloader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.04);
+    pointer-events: none;
+}
+.preloader-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+.hologram-scanner {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 28px;
+}
+.glow-orbit-outer {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #38BDF8;
+    border-bottom-color: #818CF8;
+    animation: rotateClockwise 2s linear infinite;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.45);
+}
+.glow-orbit-inner {
+    position: absolute;
+    width: 105px;
+    height: 105px;
+    border-radius: 50%;
+    border: 2px dashed rgba(6, 182, 212, 0.7);
+    border-left-color: #10B981;
+    animation: rotateCounter 2.8s linear infinite;
+}
+.laser-grid-line {
+    position: absolute;
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #38BDF8, #FFFFFF, #38BDF8, transparent);
+    box-shadow: 0 0 12px #38BDF8;
+    animation: sweepLaser 1.8s ease-in-out infinite alternate;
+}
+.scanner-core-icon {
+    font-size: 2.6rem;
+    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.8));
+    animation: pulseCore 1.8s ease-in-out infinite;
+}
+.preloader-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    background: linear-gradient(90deg, #FFFFFF 0%, #38BDF8 50%, #818CF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+.preloader-status {
+    color: #94A3B8;
+    font-size: 0.95rem;
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+    margin-bottom: 20px;
+}
+.progress-rail {
+    width: 240px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.progress-beam {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #06B6D4, #3B82F6, #10B981);
+    box-shadow: 0 0 14px #38BDF8;
+    border-radius: 12px;
+    animation: loadBeam 1.8s ease-in-out infinite;
+}
+.preloader-badge {
+    margin-top: 16px;
+    font-size: 0.72rem;
+    color: #64748B;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+@keyframes rotateClockwise {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes rotateCounter {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+@keyframes sweepLaser {
+    0% { transform: translateY(-42px); opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { transform: translateY(42px); opacity: 0.3; }
+}
+@keyframes pulseCore {
+    0%, 100% { transform: scale(0.95); opacity: 0.85; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+@keyframes loadBeam {
+    0% { width: 5%; transform: translateX(-15%); }
+    50% { width: 85%; transform: translateX(0); }
+    100% { width: 100%; transform: translateX(15%); }
+}
+</style>
+
+<script>
+(function() {
+    const parentDoc = window.parent.document;
+    if (parentDoc.getElementById('ai-page-preloader')) return;
+
+    const preloader = parentDoc.createElement('div');
+    preloader.id = 'ai-page-preloader';
+    preloader.innerHTML = `
+        <div class="preloader-card">
+            <div class="hologram-scanner">
+                <div class="glow-orbit-outer"></div>
+                <div class="glow-orbit-inner"></div>
+                <div class="laser-grid-line"></div>
+                <div class="scanner-core-icon">🔬</div>
+            </div>
+            <div class="preloader-title">METAL DEFECT AI</div>
+            <div class="preloader-status">Initializing Neural Surface Scanner...</div>
+            <div class="progress-rail">
+                <div class="progress-beam"></div>
+            </div>
+            <div class="preloader-badge">Deep Learning • Surface Vision Engine</div>
+        </div>
+    `;
+
+    const styleEl = parentDoc.createElement('style');
+    styleEl.textContent = document.querySelector('style').textContent;
+    parentDoc.head.appendChild(styleEl);
+    parentDoc.body.appendChild(preloader);
+
+    function dismiss() {
+        if (!preloader.classList.contains('fade-out')) {
+            preloader.classList.add('fade-out');
+            setTimeout(() => {
+                if (preloader.parentNode) preloader.parentNode.removeChild(preloader);
+            }, 800);
+        }
+    }
+
+    if (parentDoc.readyState === 'complete') {
+        setTimeout(dismiss, 1200);
+    } else {
+        window.parent.addEventListener('load', () => setTimeout(dismiss, 1000));
+        setTimeout(dismiss, 2200);
+    }
+})();
+</script>
+""", height=0, width=0)
+
+# -----------------------------------------------------------------------------
 # CONSTANTS & SETUP
 # -----------------------------------------------------------------------------
 IMG_SIZE = 256
@@ -300,14 +486,15 @@ else:
         img_resized = cv2.resize(img_gray, (IMG_SIZE, IMG_SIZE))
         img_3ch = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2BGR)
 
-        prob = predict(img_3ch)
-        heatmap, dilated = create_heatmap(img_resized)
+        with st.spinner("⚡ Running AI surface inspection & detecting anomalies..."):
+            prob = predict(img_3ch)
+            heatmap, dilated = create_heatmap(img_resized)
 
-        if np.max(dilated) == 0:
-            boxed = img_3ch.copy()
-            regions = []
-        else:
-            boxed, regions = highlight_defects_with_regions(img_resized, heatmap)
+            if np.max(dilated) == 0:
+                boxed = img_3ch.copy()
+                regions = []
+            else:
+                boxed, regions = highlight_defects_with_regions(img_resized, heatmap)
 
         is_defect = prob > CONF_THRESHOLD
 
