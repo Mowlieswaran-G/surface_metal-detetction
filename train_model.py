@@ -9,26 +9,55 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torchvision import transforms, models
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-# Fix Unicode / charmap encoding errors on Windows when output is redirected
-if sys.platform == "win32":
-    try:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
-    except Exception:
-        pass
+# Setup dual logger to simultaneously write to console and train.log
+class DualLogger:
+    def __init__(self, filepath):
+        self.terminal = sys.stdout
+        self.log_file = open(filepath, "w", encoding="utf-8", buffering=1)
 
-# Determine base paths: check local workspace directory first, then external fallback
+    def write(self, message):
+        try:
+            self.terminal.write(message)
+            self.terminal.flush()
+        except Exception:
+            pass
+        try:
+            self.log_file.write(message)
+            self.log_file.flush()
+        except Exception:
+            pass
+
+    def flush(self):
+        try:
+            self.terminal.flush()
+        except Exception:
+            pass
+        try:
+            self.log_file.flush()
+        except Exception:
+            pass
+
+    def isatty(self):
+        return getattr(self.terminal, "isatty", lambda: True)()
+
+
+LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train.log")
+sys.stdout = DualLogger(LOG_PATH)
+
+# Dataset directory paths
+DEFECT_DIR = r"C:\Users\MOWLIESWARAN\OneDrive\Documents\Web development\Projects\surface_metal-detetction\models\Diffected with no greyscale"
+NORMAL_DIR = r"C:\Users\MOWLIESWARAN\OneDrive\Documents\Web development\Projects\surface_metal-detetction\models\Non diffected with greyscale"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCAL_DEFECT_DIR = os.path.join(BASE_DIR, "models", "Diffected with no greyscale")
-LOCAL_NORMAL_DIR = os.path.join(BASE_DIR, "models", "Non diffected with greyscale")
 
-EXTERNAL_DEFECT_DIR = r"C:/Users/MOWLIESWARAN/OneDrive/Documents/mini-project-main/Diffected with no greyscale"
-EXTERNAL_NORMAL_DIR = r"C:/Users/MOWLIESWARAN/OneDrive/Documents/mini-project-main/Non diffected with greyscale"
+if not os.path.exists(DEFECT_DIR):
+    DEFECT_DIR = os.path.join(BASE_DIR, "models", "Diffected with no greyscale")
+if not os.path.exists(NORMAL_DIR):
+    NORMAL_DIR = os.path.join(BASE_DIR, "models", "Non diffected with greyscale")
 
-DEFECT_DIR = LOCAL_DEFECT_DIR if os.path.exists(LOCAL_DEFECT_DIR) else EXTERNAL_DEFECT_DIR
-NORMAL_DIR = LOCAL_NORMAL_DIR if os.path.exists(LOCAL_NORMAL_DIR) else EXTERNAL_NORMAL_DIR
 SAVE_PATH = os.path.join(BASE_DIR, "models", "defect_classifier.pth")
+
 
 os.makedirs(os.path.join(BASE_DIR, "models"), exist_ok=True)
 
@@ -99,7 +128,8 @@ def train_epoch(loader, model, criterion, optimizer, device):
     correct = 0
     total = 0
     
-    for batch_idx, (images, labels) in enumerate(loader):
+    pbar = tqdm(loader, desc="  Training", unit="batch", leave=True)
+    for batch_idx, (images, labels) in enumerate(pbar):
         images = images.to(device)
         labels = labels.to(device)
         
@@ -114,13 +144,13 @@ def train_epoch(loader, model, criterion, optimizer, device):
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
         
-        if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == len(loader):
-            print(
-                f"  Batch {batch_idx + 1}/{len(loader)} | "
-                f"Loss: {loss.item():.4f} | "
-                f"Acc: {100 * correct / total:.2f}%",
-                flush=True
-            )
+        current_loss = total_loss / (batch_idx + 1)
+        current_acc = 100.0 * correct / total
+        pbar.set_postfix({
+            "Loss": f"{loss.item():.4f}",
+            "AvgLoss": f"{current_loss:.4f}",
+            "Acc": f"{current_acc:.2f}%"
+        })
     
     epoch_loss = total_loss / len(loader)
     epoch_acc = 100 * correct / total
@@ -133,8 +163,9 @@ def validate(loader, model, criterion, device):
     correct = 0
     total = 0
     
+    pbar = tqdm(loader, desc="  Validating", unit="batch", leave=True)
     with torch.no_grad():
-        for images, labels in loader:
+        for batch_idx, (images, labels) in enumerate(pbar):
             images = images.to(device)
             labels = labels.to(device)
             
@@ -145,10 +176,18 @@ def validate(loader, model, criterion, device):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+            
+            current_loss = total_loss / (batch_idx + 1)
+            current_acc = 100.0 * correct / total
+            pbar.set_postfix({
+                "Loss": f"{loss.item():.4f}",
+                "Acc": f"{current_acc:.2f}%"
+            })
     
     avg_loss = total_loss / len(loader)
     avg_acc = 100 * correct / total
     return avg_loss, avg_acc
+
 
 def main():
     print("\nLoading images...")
