@@ -79,6 +79,33 @@ st.markdown("""
         padding: 8px;
         text-align: center;
     }
+    /* Prominent Drag and Drop Zone */
+    [data-testid="stFileUploader"] {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    [data-testid="stFileUploader"] section {
+        padding: 36px 20px !important;
+        border: 2px dashed #38BDF8 !important;
+        border-radius: 16px !important;
+        background: rgba(56, 189, 248, 0.04) !important;
+        transition: all 0.25s ease-in-out !important;
+        text-align: center;
+    }
+    [data-testid="stFileUploader"] section:hover {
+        border-color: #06B6D4 !important;
+        background: rgba(56, 189, 248, 0.1) !important;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.2) !important;
+    }
+    [data-testid="stFileUploader"] section span {
+        color: #F8FAFC !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+    }
+    [data-testid="stFileUploader"] section small {
+        color: #94A3B8 !important;
+        font-size: 0.85rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -157,17 +184,19 @@ if model is None:
     st.error("Model file not found. Please ensure 'models/defect_classifier.pth' exists.")
 else:
     # -------------------------------------------------------------------------
-    # SIMPLE INPUT SECTION
+    # SIMPLE INPUT SECTION (DRAG & DROP ZONE)
     # -------------------------------------------------------------------------
-    col_input1, col_input2 = st.columns([1.5, 1])
+    uploaded_file = st.file_uploader(
+        "📁 Drag and drop your metal surface image here, or click to browse",
+        type=["jpg", "png", "jpeg", "bmp"],
+        help="Upload any high-resolution surface image file"
+    )
 
-    with col_input1:
-        uploaded_file = st.file_uploader("Upload a metal image:", type=["jpg", "png", "jpeg", "bmp"])
-
-    with col_input2:
+    with st.expander("💡 Or test with preloaded sample images from the dataset"):
         sample_choice = st.selectbox(
-            "Or pick an example test image:",
-            list(DEMO_SAMPLES.keys())
+            "Choose a sample to inspect:",
+            list(DEMO_SAMPLES.keys()),
+            index=0
         )
 
     # Resolve selected image
@@ -176,7 +205,7 @@ else:
     if uploaded_file is not None:
         file_bytes = np.frombuffer(uploaded_file.read(), np.uint8)
         img_gray = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
-    elif DEMO_SAMPLES[sample_choice] is not None and os.path.exists(DEMO_SAMPLES[sample_choice]):
+    elif sample_choice != "None (Upload my own)" and DEMO_SAMPLES.get(sample_choice) and os.path.exists(DEMO_SAMPLES[sample_choice]):
         img_gray = cv2.imread(DEMO_SAMPLES[sample_choice], cv2.IMREAD_GRAYSCALE)
 
     # -------------------------------------------------------------------------
