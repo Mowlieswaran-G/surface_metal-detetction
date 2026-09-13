@@ -184,21 +184,23 @@ components.html("""
     parentDoc.head.appendChild(styleEl);
     parentDoc.body.appendChild(preloader);
 
-    function dismiss() {
-        if (!preloader.classList.contains('fade-out')) {
+    window.parent.dismissAIPagePreloader = function() {
+        if (preloader && !preloader.classList.contains('fade-out')) {
             preloader.classList.add('fade-out');
             setTimeout(() => {
-                if (preloader.parentNode) preloader.parentNode.removeChild(preloader);
-            }, 800);
+                if (preloader && preloader.parentNode) {
+                    preloader.parentNode.removeChild(preloader);
+                }
+            }, 750);
         }
-    }
+    };
 
-    if (parentDoc.readyState === 'complete') {
-        setTimeout(dismiss, 1200);
-    } else {
-        window.parent.addEventListener('load', () => setTimeout(dismiss, 1000));
-        setTimeout(dismiss, 2200);
-    }
+    // Safety fallback so it never hangs indefinitely
+    setTimeout(() => {
+        if (typeof window.parent.dismissAIPagePreloader === 'function') {
+            window.parent.dismissAIPagePreloader();
+        }
+    }, 15000);
 })();
 </script>
 """, height=0, width=0)
@@ -569,3 +571,30 @@ else:
 
     else:
         st.info("👆 Please upload an image or choose an example from the dropdown above to inspect.")
+
+# -----------------------------------------------------------------------------
+# DISMISS PRELOADER WHEN ENTIRE PROJECT & UI HAVE FULLY LOADED
+# -----------------------------------------------------------------------------
+components.html("""
+<script>
+(function() {
+    function tryDismiss() {
+        if (typeof window.parent.dismissAIPagePreloader === 'function') {
+            window.parent.dismissAIPagePreloader();
+        } else {
+            const parentDoc = window.parent.document;
+            const preloader = parentDoc.getElementById('ai-page-preloader');
+            if (preloader) {
+                preloader.classList.add('fade-out');
+                setTimeout(() => {
+                    if (preloader && preloader.parentNode) {
+                        preloader.parentNode.removeChild(preloader);
+                    }
+                }, 750);
+            }
+        }
+    }
+    setTimeout(tryDismiss, 350);
+})();
+</script>
+""", height=0, width=0)
