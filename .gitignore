@@ -5,12 +5,16 @@
 Diffected with no greyscale/
 Non diffected with greyscale/
 
-# Ignore trained models
-models/
+# Ignore heavy dataset folders inside models, but allow the trained weights
+models/*
+!models/defect_classifier.pth
 
-# Ignore images
+# Ignore root images, but allow samples
 *.jpg
 *.png
+!samples/*.jpg
+!samples/*.png
 
 # Python cache
 __pycache__/
+.vscode/

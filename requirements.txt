@@ -1,7 +1,8 @@
+streamlit
 torch
 torchvision
-opencv-python
-streamlit
+opencv-python-headless
 pandas
+numpy
 matplotlib
 scikit-learn

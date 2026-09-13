@@ -271,9 +271,9 @@ DEVICE = "cpu"
 
 DEMO_SAMPLES = {
     "None (Upload my own)": None,
-    "Example 1: Surface Defect (Pit/Scratch)": os.path.join(BASE_DIR, "models", "Diffected with no greyscale", "0000f269f.jpg"),
-    "Example 2: Surface Defect (Crack)": os.path.join(BASE_DIR, "models", "Diffected with no greyscale", "0002cc93b.jpg"),
-    "Example 3: Normal Surface (Clean Metal)": os.path.join(BASE_DIR, "models", "Non diffected with greyscale", "kos01", "Part2.jpg"),
+    "Example 1: Surface Defect (Pit/Scratch)": os.path.join(BASE_DIR, "samples", "defect_pit.jpg") if os.path.exists(os.path.join(BASE_DIR, "samples", "defect_pit.jpg")) else os.path.join(BASE_DIR, "models", "Diffected with no greyscale", "0000f269f.jpg"),
+    "Example 2: Surface Defect (Crack)": os.path.join(BASE_DIR, "samples", "defect_crack.jpg") if os.path.exists(os.path.join(BASE_DIR, "samples", "defect_crack.jpg")) else os.path.join(BASE_DIR, "models", "Diffected with no greyscale", "0002cc93b.jpg"),
+    "Example 3: Normal Surface (Clean Metal)": os.path.join(BASE_DIR, "samples", "normal_surface.jpg") if os.path.exists(os.path.join(BASE_DIR, "samples", "normal_surface.jpg")) else os.path.join(BASE_DIR, "models", "Non diffected with greyscale", "kos01", "Part2.jpg"),
 }
 
 # -----------------------------------------------------------------------------
