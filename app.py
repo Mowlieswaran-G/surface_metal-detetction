@@ -18,11 +18,9 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# ATTRACTIVE AI PRELOADER ANIMATION (RUNS ONLY ONCE ON INITIAL LOAD)
+# ATTRACTIVE AI PRELOADER ANIMATION
 # -----------------------------------------------------------------------------
-if "preloader_shown" not in st.session_state:
-    st.session_state.preloader_shown = True
-    components.html("""
+components.html("""
 <style>
 #ai-page-preloader {
     position: fixed;
@@ -102,28 +100,44 @@ if "preloader_shown" not in st.session_state:
     -webkit-text-fill-color: transparent;
     margin-bottom: 8px;
 }
-.preloader-status {
-    color: #94A3B8;
-    font-size: 0.95rem;
-    font-family: 'JetBrains Mono', monospace, sans-serif;
-    margin-bottom: 20px;
+.progress-wrapper {
+    width: 280px;
+    margin-top: 6px;
 }
 .progress-rail {
-    width: 240px;
-    height: 6px;
+    width: 100%;
+    height: 8px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
 }
 .progress-beam {
-    width: 0%;
+    width: 6%;
     height: 100%;
     background: linear-gradient(90deg, #06B6D4, #3B82F6, #10B981);
-    box-shadow: 0 0 14px #38BDF8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
     border-radius: 12px;
-    animation: loadBeam 1.8s ease-in-out infinite;
+    transition: width 0.18s ease-out;
+}
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+}
+.preloader-status {
+    color: #94A3B8;
+    font-size: 0.82rem;
+}
+.progress-pct {
+    color: #38BDF8;
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 .preloader-badge {
     margin-top: 16px;
@@ -150,20 +164,12 @@ if "preloader_shown" not in st.session_state:
     0%, 100% { transform: scale(0.95); opacity: 0.85; }
     50% { transform: scale(1.1); opacity: 1; }
 }
-@keyframes loadBeam {
-    0% { width: 5%; transform: translateX(-15%); }
-    50% { width: 85%; transform: translateX(0); }
-    100% { width: 100%; transform: translateX(15%); }
-}
 </style>
 
 <script>
 (function() {
     const parentDoc = window.parent.document;
     if (parentDoc.getElementById('ai-page-preloader')) return;
-    try {
-        if (window.parent.sessionStorage.getItem('ai_preloader_completed')) return;
-    } catch(e) {}
 
     const preloader = parentDoc.createElement('div');
     preloader.id = 'ai-page-preloader';
@@ -176,9 +182,14 @@ if "preloader_shown" not in st.session_state:
                 <div class="scanner-core-icon">🔬</div>
             </div>
             <div class="preloader-title">METAL DEFECT AI</div>
-            <div class="preloader-status">Initializing Neural Surface Scanner...</div>
-            <div class="progress-rail">
-                <div class="progress-beam"></div>
+            <div class="progress-wrapper">
+                <div class="progress-rail">
+                    <div class="progress-beam" id="progress-fill-bar"></div>
+                </div>
+                <div class="progress-info">
+                    <span class="preloader-status" id="preloader-status-text">Initializing Vision Engine...</span>
+                    <span class="progress-pct" id="progress-pct-val">6%</span>
+                </div>
             </div>
             <div class="preloader-badge">Deep Learning • Surface Vision Engine</div>
         </div>
@@ -189,18 +200,54 @@ if "preloader_shown" not in st.session_state:
     parentDoc.head.appendChild(styleEl);
     parentDoc.body.appendChild(preloader);
 
-    window.parent.dismissAIPagePreloader = function() {
-        try {
-            window.parent.sessionStorage.setItem('ai_preloader_completed', 'true');
-        } catch(e) {}
-        if (preloader && !preloader.classList.contains('fade-out')) {
-            preloader.classList.add('fade-out');
-            setTimeout(() => {
-                if (preloader && preloader.parentNode) {
-                    preloader.parentNode.removeChild(preloader);
+    let progress = 6;
+    const bar = preloader.querySelector('#progress-fill-bar');
+    const pct = preloader.querySelector('#progress-pct-val');
+    const statusText = preloader.querySelector('#preloader-status-text');
+
+    // Smooth, realistic slow progressive crawl
+    const progressTimer = setInterval(() => {
+        if (progress < 90) {
+            const step = Math.max(0.2, (90 - progress) * 0.035);
+            progress += step;
+            if (progress > 90) progress = 90;
+
+            if (bar) bar.style.width = progress.toFixed(1) + '%';
+            if (pct) pct.textContent = Math.floor(progress) + '%';
+
+            if (statusText) {
+                if (progress > 70) {
+                    statusText.textContent = 'Preparing Project View...';
+                } else if (progress > 45) {
+                    statusText.textContent = 'Loading ResNet-18 Weights...';
+                } else if (progress > 20) {
+                    statusText.textContent = 'Connecting Vision Engine...';
                 }
-            }, 750);
+            }
         }
+    }, 70);
+
+    window.parent.dismissAIPagePreloader = function() {
+        clearInterval(progressTimer);
+
+        // Smoothly accelerate to 100% completion
+        if (bar) {
+            bar.style.transition = 'width 0.45s ease-out';
+            bar.style.width = '100%';
+        }
+        if (pct) pct.textContent = '100%';
+        if (statusText) statusText.textContent = 'Ready! Loading Original Project...';
+
+        setTimeout(() => {
+            if (preloader && !preloader.classList.contains('fade-out')) {
+                preloader.classList.add('fade-out');
+                setTimeout(() => {
+                    if (preloader && preloader.parentNode) {
+                        preloader.parentNode.removeChild(preloader);
+                    }
+                }, 750);
+            }
+        }, 500);
     };
 
     // Safety fallback so it never hangs indefinitely
